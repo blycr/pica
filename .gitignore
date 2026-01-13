@@ -7,3 +7,21 @@ thumbnails/
 # 环境变量
 .env
 node_modules
+
+# 构建输出
+dist/
+
+# 测试报告
+tests/
+
+# 临时文件
+*.log
+*.tmp
+*.swp
+*.swo
+
+# vs code
+.vscode/
+
+# agent
+.agent/
