@@ -1,5 +1,6 @@
 import express from 'express';
 import { db } from '../db/init.js';
+import path from 'path';
 
 const router = express.Router();
 
@@ -31,7 +32,10 @@ router.get('/continue-reading', (req, res) => {
             WHERE m.last_read_at IS NOT NULL
             ORDER BY m.last_read_at DESC
             LIMIT ?
-        `).all(parseInt(limit));
+        `).all(parseInt(limit)).map(m => ({
+            ...m,
+            cover_path: m.cover_path ? path.relative(process.cwd(), m.cover_path) : null
+        }));
 
         res.json(continueReading);
     } catch (error) {
@@ -60,7 +64,10 @@ router.get('/', (req, res) => {
             LEFT JOIN chapters c ON h.chapter_id = c.id
             ORDER BY h.read_at DESC
             LIMIT ? OFFSET ?
-        `).all(parseInt(limit), offset);
+        `).all(parseInt(limit), offset).map(h => ({
+            ...h,
+            cover_path: h.cover_path ? path.relative(process.cwd(), h.cover_path) : null
+        }));
 
         const { total } = db.prepare('SELECT COUNT(*) as total FROM reading_history').get();
 
@@ -92,7 +99,10 @@ router.get('/favorites', (req, res) => {
             WHERE is_favorite = 1 
             ORDER BY updated_at DESC
             LIMIT ? OFFSET ?
-        `).all(parseInt(limit), offset);
+        `).all(parseInt(limit), offset).map(m => ({
+            ...m,
+            cover_path: m.cover_path ? path.relative(process.cwd(), m.cover_path) : null
+        }));
 
         const { total } = db.prepare('SELECT COUNT(*) as total FROM manga WHERE is_favorite = 1').get();
 

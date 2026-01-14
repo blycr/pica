@@ -7,6 +7,8 @@ import {
     getThumbnailCacheStats
 } from '../utils/thumbnail.js';
 
+import path from 'path';
+
 const router = express.Router();
 
 /**
@@ -16,14 +18,14 @@ const router = express.Router();
  */
 router.get('/generate', async (req, res) => {
     try {
-        const { path, size = 'medium' } = req.query;
+        const { path: imagePath, size = 'medium' } = req.query;
 
-        if (!path) {
+        if (!imagePath) {
             return res.status(400).json({ error: '请提供图片路径' });
         }
 
-
-        const thumbnailPath = await generateThumbnail(path, size);
+        const resolvedPath = path.isAbsolute(imagePath) ? imagePath : path.resolve(process.cwd(), imagePath);
+        const thumbnailPath = await generateThumbnail(resolvedPath, size);
 
         if (!thumbnailPath) {
             return res.status(422).send('Unable to generate thumbnail: Invalid image format');

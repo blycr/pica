@@ -112,8 +112,14 @@ export function scanMangaDirectory(mangaPath) {
  * 从文件名中提取章节号
  */
 function extractChapterNumber(filename) {
-    const match = filename.match(/(\d+)/);
-    return match ? parseInt(match[1], 10) : 0;
+    // 优先匹配像是 "第12话", "Chapter 12", "Ch.12" 这样的模式
+    const chapterMatch = filename.match(/(?:第|Ch\.?|Chapter\s*|v\.|vol\.?|volume\s*)(\d+(\.\d+)?)/i);
+    if (chapterMatch) {
+        return parseFloat(chapterMatch[1]);
+    }
+    // 否则匹配第一个数字
+    const match = filename.match(/(\d+(\.\d+)?)/);
+    return match ? parseFloat(match[1]) : 0;
 }
 
 /**

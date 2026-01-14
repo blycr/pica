@@ -74,7 +74,10 @@ router.get('/', (req, res) => {
         const { total } = countStmt.get(...countParams);
 
         res.json({
-            data: manga,
+            data: manga.map(m => ({
+                ...m,
+                cover_path: m.cover_path ? path.relative(process.cwd(), m.cover_path) : null
+            })),
             pagination: {
                 page: parseInt(page),
                 limit: parseInt(limit),
@@ -105,7 +108,10 @@ router.get('/:id', (req, res) => {
       SELECT * FROM chapters 
       WHERE manga_id = ? 
       ORDER BY chapter_number ASC
-    `).all(id);
+    `).all(id).map(c => ({
+            ...c,
+            path: path.relative(process.cwd(), c.path)
+        }));
 
         // 获取标签
         const tags = db.prepare(`
@@ -122,6 +128,11 @@ router.get('/:id', (req, res) => {
       LIMIT 1
     `).get(id);
 
+        // 统一封面路径为相对路径
+        if (manga.cover_path) {
+            manga.cover_path = path.relative(process.cwd(), manga.cover_path);
+        }
+
         res.json({
             ...manga,
             chapters,
@@ -137,7 +148,7 @@ router.get('/:id', (req, res) => {
  * 获取章节的图片列表
  * GET /api/manga/:id/chapters/:chapterId/pages
  */
-router.get('/:id/chapters/:chapterId/pages', (req, res) => {
+router.get('/:id/chapters/:chapterId/pages', async (req, res) => {
     try {
         const { id, chapterId } = req.params;
 
@@ -152,7 +163,7 @@ router.get('/:id/chapters/:chapterId/pages', (req, res) => {
 
         // 读取章节目录中的图片文件
         const IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'];
-        const files = fs.readdirSync(chapter.path);
+        const files = await fs.promises.readdir(chapter.path);
         const images = files
             .filter(file => {
                 const ext = path.extname(file).toLowerCase();
@@ -162,7 +173,7 @@ router.get('/:id/chapters/:chapterId/pages', (req, res) => {
             .map((file, index) => ({
                 page: index + 1,
                 filename: file,
-                path: path.join(chapter.path, file)
+                path: path.relative(process.cwd(), path.join(chapter.path, file))
             }));
 
         res.json({
@@ -183,16 +194,32 @@ router.post('/:id/favorite', (req, res) => {
     try {
         const { id } = req.params;
 
-        const manga = db.prepare('SELECT is_favorite FROM manga WHERE id = ?').get(id);
+        const manga = db.prepare('SELECT id, title, is_favorite FROM manga WHERE id = ?').get(id);
         if (!manga) {
             return res.status(404).json({ error: '漫画不存在' });
         }
 
         const newStatus = manga.is_favorite ? 0 : 1;
-        db.prepare('UPDATE manga SET is_favorite = ? WHERE id = ?').run(newStatus, id);
 
-        res.json({ success: true, is_favorite: newStatus });
+        // 使用事务确保数据一致性
+        const transaction = db.transaction(() => {
+            db.prepare('UPDATE manga SET is_favorite = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
+                .run(newStatus, id);
+        });
+
+        transaction();
+
+        res.json({
+            success: true,
+            is_favorite: newStatus,
+            message: newStatus ? '已添加到收藏' : '已取消收藏',
+            manga: {
+                id: manga.id,
+                title: manga.title
+            }
+        });
     } catch (error) {
+        console.error('切换收藏状态失败:', error);
         res.status(500).json({ error: error.message });
     }
 });
@@ -200,23 +227,66 @@ router.post('/:id/favorite', (req, res) => {
 /**
  * 更新阅读进度
  * POST /api/manga/:id/progress
+ * 使用 UPSERT 逻辑，确保每个漫画的每个章节只保留最新的阅读进度
  */
 router.post('/:id/progress', (req, res) => {
     try {
         const { id } = req.params;
         const { chapterId, pageNumber, progress } = req.body;
 
-        db.prepare(`
-      INSERT INTO reading_history (manga_id, chapter_id, page_number, progress)
-      VALUES (?, ?, ?, ?)
-    `).run(id, chapterId, pageNumber, progress);
+        // 验证输入参数
+        if (!chapterId || pageNumber === undefined || progress === undefined) {
+            return res.status(400).json({
+                error: '缺少必要参数',
+                required: ['chapterId', 'pageNumber', 'progress']
+            });
+        }
 
-        db.prepare(`
-      UPDATE manga SET last_read_at = CURRENT_TIMESTAMP WHERE id = ?
-    `).run(id);
+        // 验证漫画和章节是否存在
+        const manga = db.prepare('SELECT id FROM manga WHERE id = ?').get(id);
+        if (!manga) {
+            return res.status(404).json({ error: '漫画不存在' });
+        }
 
-        res.json({ success: true });
+        const chapter = db.prepare('SELECT id FROM chapters WHERE id = ? AND manga_id = ?').get(chapterId, id);
+        if (!chapter) {
+            return res.status(404).json({ error: '章节不存在或不属于该漫画' });
+        }
+
+        // 使用事务确保数据一致性
+        const transaction = db.transaction(() => {
+            // 删除该漫画该章节的旧记录，只保留最新的
+            db.prepare(`
+                DELETE FROM reading_history 
+                WHERE manga_id = ? AND chapter_id = ?
+            `).run(id, chapterId);
+
+            // 插入新的阅读进度
+            db.prepare(`
+                INSERT INTO reading_history (manga_id, chapter_id, page_number, progress, read_at)
+                VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+            `).run(id, chapterId, pageNumber, progress);
+
+            // 更新漫画的最后阅读时间
+            db.prepare(`
+                UPDATE manga SET last_read_at = CURRENT_TIMESTAMP WHERE id = ?
+            `).run(id);
+        });
+
+        transaction();
+
+        res.json({
+            success: true,
+            message: '阅读进度已保存',
+            data: {
+                manga_id: parseInt(id),
+                chapter_id: parseInt(chapterId),
+                page_number: parseInt(pageNumber),
+                progress: parseFloat(progress)
+            }
+        });
     } catch (error) {
+        console.error('保存阅读进度失败:', error);
         res.status(500).json({ error: error.message });
     }
 });

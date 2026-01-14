@@ -20,8 +20,25 @@ $ErrorActionPreference = "Stop"
 Write-Host "`n🚀 正在准备生产环境..." -ForegroundColor Cyan
 
 # ---------------------------------------------------------
-# 1. 进程清理
 # ---------------------------------------------------------
+# 1. 配置读取与进程清理
+# ---------------------------------------------------------
+function Get-EnvVariable {
+    param($Name, $DefaultValue)
+    $EnvFile = Join-Path $PSScriptRoot "..\.env"
+    if (Test-Path $EnvFile) {
+        $content = Get-Content $EnvFile
+        foreach ($line in $content) {
+            if ($line -match "^$Name=(.*)$") {
+                return $matches[1].Trim()
+            }
+        }
+    }
+    return $DefaultValue
+}
+
+$PORT = Get-EnvVariable "PORT" "3000"
+
 function Stop-PortProcess {
     param ([int]$Port)
     $process = Get-NetTCPConnection -LocalPort $Port -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -Unique
@@ -31,7 +48,7 @@ function Stop-PortProcess {
     }
 }
 
-Stop-PortProcess -Port 3000
+Stop-PortProcess -Port $PORT
 
 # ---------------------------------------------------------
 # 2. 构建前端
@@ -39,7 +56,7 @@ Stop-PortProcess -Port 3000
 Set-Location -Path (Join-Path $PSScriptRoot "..")
 
 Write-Host "🔨 正在构建前端 (Vite Build)..." -ForegroundColor Green
-# 设置生产环境变量用于构建 (Windows PowerShell syntax)
+# 显式设置生产模式
 $env:NODE_ENV = "production"
 pnpm build
 
@@ -52,12 +69,12 @@ if ($LASTEXITCODE -ne 0) {
 # 3. 启动生产服务器
 # ---------------------------------------------------------
 # 获取 IP 用于展示
-$IP = Get-NetIPAddress -AddressFamily IPv4 -InterfaceAlias "Wi-Fi","Ethernet","WLAN" -ErrorAction SilentlyContinue | 
-      Where-Object { $_.IPAddress -like "192.168.*" -or $_.IPAddress -like "10.*" } | 
-      Select-Object -ExpandProperty IPAddress -First 1
+$IP = Get-NetIPAddress -AddressFamily IPv4 -InterfaceAlias "Wi-Fi", "Ethernet", "WLAN" -ErrorAction SilentlyContinue | 
+Where-Object { $_.IPAddress -like "192.168.*" -or $_.IPAddress -like "10.*" } | 
+Select-Object -ExpandProperty IPAddress -First 1
 
 Write-Host "`n✨ 构建完成! 正在启动生产服务器..." -ForegroundColor Green
-Write-Host "   🌍 服务地址: http://$($IP):3000" -ForegroundColor Cyan
+Write-Host "   🌍 服务地址: http://$($IP):$PORT" -ForegroundColor Cyan
 Write-Host "   (包含前端静态资源托管 + API)" -ForegroundColor Gray
 
 # 启动 Node 服务器

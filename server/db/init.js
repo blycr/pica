@@ -111,28 +111,44 @@ export function initDatabase() {
     )
   `);
 
-  // 用户设置表（扩展用）
+  // PIN 会话表（存储 token 与过期时间）
   db.exec(`
-    CREATE TABLE IF NOT EXISTS settings (
-      key TEXT PRIMARY KEY,
-      value TEXT,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    CREATE TABLE IF NOT EXISTS auth_sessions (
+      token TEXT PRIMARY KEY,
+      expires_at DATETIME NOT NULL
+    )
+  `);
+
+  // 评分表
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS ratings (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      manga_id INTEGER NOT NULL,
+      rating REAL NOT NULL CHECK(rating >= 0 AND rating <= 10),
+      comment TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (manga_id) REFERENCES manga(id) ON DELETE CASCADE
     )
   `);
 
   // 数据库迁移：确保旧数据表包含新字段 (防止因缺少字段导致索引创建失败)
   try { db.exec('ALTER TABLE manga ADD COLUMN library_id INTEGER REFERENCES libraries(id) ON DELETE SET NULL'); } catch (e) { }
   try { db.exec('ALTER TABLE manga ADD COLUMN is_favorite BOOLEAN DEFAULT 0'); } catch (e) { }
+  try { db.exec('ALTER TABLE manga ADD COLUMN rating REAL DEFAULT 0'); } catch (e) { }
+  try { db.exec('ALTER TABLE manga ADD COLUMN rating_count INTEGER DEFAULT 0'); } catch (e) { }
 
   // 创建索引以提升查询性能
   db.exec(`
     CREATE INDEX IF NOT EXISTS idx_manga_title ON manga(title);
     CREATE INDEX IF NOT EXISTS idx_manga_favorite ON manga(is_favorite);
     CREATE INDEX IF NOT EXISTS idx_manga_library_id ON manga(library_id);
+    CREATE INDEX IF NOT EXISTS idx_manga_rating ON manga(rating);
     CREATE INDEX IF NOT EXISTS idx_chapters_manga_id ON chapters(manga_id);
     CREATE INDEX IF NOT EXISTS idx_manga_tags_manga_id ON manga_tags(manga_id);
     CREATE INDEX IF NOT EXISTS idx_manga_tags_tag_id ON manga_tags(tag_id);
     CREATE INDEX IF NOT EXISTS idx_reading_history_manga_id ON reading_history(manga_id);
+    CREATE INDEX IF NOT EXISTS idx_ratings_manga_id ON ratings(manga_id);
   `);
 
   console.log('✅ 数据库初始化完成');

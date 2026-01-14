@@ -2,6 +2,7 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { initDatabase } from './db/init.js';
 import mangaRoutes from './routes/manga.js';
@@ -10,8 +11,11 @@ import scannerRoutes from './routes/scanner.js';
 import thumbnailRoutes from './routes/thumbnails.js';
 import searchRoutes from './routes/search.js';
 import libraryRoutes from './routes/libraries.js';
-import metadataRoutes from './routes/metadata.js';
+import authRoutes from './routes/auth.js';
+import ratingsRoutes from './routes/ratings.js';
 import historyRoutes from './routes/history.js';
+import configRoutes from './routes/config.js';
+import metadataRoutes from './routes/metadata.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -36,19 +40,43 @@ app.use('/api/search', searchRoutes);
 app.use('/api/libraries', libraryRoutes);
 app.use('/api/metadata', metadataRoutes);
 app.use('/api/history', historyRoutes);
+app.use('/api/config', configRoutes);
+app.use('/api/ratings', ratingsRoutes);
 
 // 图片服务中间件 (Temporary Secure Image Server)
 app.get('/api/image', (req, res) => {
     const imagePath = req.query.path;
     if (!imagePath) return res.status(400).send('Missing path');
 
-    // 安全检查：确保路径在允许的目录内 (Simple check)
-    // 实际生产环境需要更严格的检查，防止路径遍历
-    // 这里假设 path 是由于 scanner 产生的绝对路径，我们信任它，但至少确保文件存在
-    res.sendFile(imagePath, (err) => {
+    // 解析绝对路径
+    const resolvedPath = path.resolve(imagePath);
+
+    // 获取允许的根目录列表
+    const allowedRoots = (process.env.MANGA_LIBRARY_PATH || '')
+        .split(',')
+        .map(p => path.resolve(p.trim()))
+        .filter(p => p);
+
+    // 检查请求的路径是否在允许的目录内
+    const isAllowed = allowedRoots.some(root => resolvedPath.startsWith(root));
+
+    if (!isAllowed) {
+        // 生产环境不应返回详细错误
+        console.warn(`[Security] Blocked unauthorized access attempt: ${resolvedPath}`);
+        return res.status(403).send('Access denied');
+    }
+
+    // 检查文件是否存在
+    if (!fs.existsSync(resolvedPath)) {
+        return res.status(404).send('Image not found');
+    }
+
+    res.sendFile(resolvedPath, (err) => {
         if (err) {
+            if (!res.headersSent) {
+                res.status(500).send('Error sending file');
+            }
             console.error('File send error:', err);
-            res.status(404).send('Image not found');
         }
     });
 });
@@ -73,10 +101,13 @@ if (process.env.NODE_ENV !== 'test') {
     // 生产环境托管静态文件
     if (process.env.NODE_ENV === 'production') {
         const distPath = path.join(__dirname, '../dist');
+        console.log('Serving static files from:', distPath);
         app.use(express.static(distPath));
 
-        // SPA 路由回退 (Express 5 compatibility: * is no longer valid, use regex)
+        // SPA 路由回退 - 匹配所有未处理的 GET 请求
+        // 使用正则字面量匹配所有路径
         app.get(/.*/, (req, res) => {
+            console.log('SPA fallback triggered for:', req.url);
             res.sendFile(path.join(distPath, 'index.html'));
         });
     }

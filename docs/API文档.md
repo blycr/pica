@@ -20,6 +20,25 @@
 
 ---
 
+## 其他基础 API
+
+### 1. 图片代理服务
+**GET** `/api/image`
+
+用于解决前端（特别是移动端）无法直接访问本地绝对路径文件的问题。
+
+**查询参数**:
+- `path` (string): 图片的相对路径或绝对路径（后端会进行安全校验）
+
+**响应**:
+- 成功: 返回图片文件流
+- 失败: 400 (缺少参数) 或 404 (文件未找到)
+
+**示例**:
+`GET /api/image?path=manga%2Fattack-on-titan%2Fcover.jpg`
+
+---
+
 ## 漫画管理 API
 
 ### 1. 获取漫画列表
@@ -898,4 +917,272 @@ async function searchAniList(title) {
   return await response.json();
 }
 ```
+
+---
+
+## 配置管理 API
+
+### 1. 获取所有配置
+**GET** `/api/config`
+
+**响应示例**:
+```json
+{
+  "env": {
+    "HOST": "0.0.0.0",
+    "PORT": "3000",
+    "NODE_ENV": "development",
+    "MANGA_LIBRARY_PATH": "D:/Manga,E:/Comics"
+  },
+  "json": {
+    "theme": "dark",
+    "language": "zh-CN"
+  },
+  "merged": {
+    "HOST": "0.0.0.0",
+    "PORT": "3000",
+    "NODE_ENV": "development",
+    "MANGA_LIBRARY_PATH": "D:/Manga,E:/Comics",
+    "theme": "dark",
+    "language": "zh-CN"
+  }
+}
+```
+
+### 2. 获取单个配置项
+**GET** `/api/config/:key`
+
+**响应示例**:
+```json
+{
+  "key": "PORT",
+  "value": "3000",
+  "source": "env"
+}
+```
+
+**source 说明**:
+- `runtime`: 从运行时环境变量读取
+- `env`: 从 .env 文件读取
+- `json`: 从 config.json 读取
+
+### 3. 更新 .env 配置
+**PUT** `/api/config/env`
+
+**请求体**:
+```json
+{
+  "PORT": "3001",
+  "HOST": "127.0.0.1",
+  "MANGA_LIBRARY_PATH": "D:/NewManga"
+}
+```
+
+**响应示例**:
+```json
+{
+  "success": true,
+  "message": ".env 配置已更新",
+  "config": {
+    "HOST": "127.0.0.1",
+    "PORT": "3001",
+    "NODE_ENV": "development",
+    "MANGA_LIBRARY_PATH": "D:/NewManga"
+  },
+  "warning": "配置已保存，但需要重启服务器才能生效"
+}
+```
+
+### 4. 更新 JSON 配置
+**PUT** `/api/config/json`
+
+**请求体**:
+```json
+{
+  "theme": "light",
+  "language": "en-US",
+  "readingMode": "vertical"
+}
+```
+
+**响应示例**:
+```json
+{
+  "success": true,
+  "message": "JSON 配置已更新",
+  "config": {
+    "theme": "light",
+    "language": "en-US",
+    "readingMode": "vertical"
+  }
+}
+```
+
+### 5. 删除配置项
+**DELETE** `/api/config/:type/:key`
+
+**路径参数**:
+- `type`: 配置类型，`env` 或 `json`
+- `key`: 配置项的键名
+
+**响应示例**:
+```json
+{
+  "success": true,
+  "message": "已从 .env 中删除配置项: OLD_CONFIG",
+  "warning": "需要重启服务器才能生效"
+}
+```
+
+### 6. 重置配置
+**POST** `/api/config/reset`
+
+**请求体**:
+```json
+{
+  "type": "env"
+}
+```
+
+**响应示例**:
+```json
+{
+  "success": true,
+  "message": ".env 已重置为默认配置",
+  "warning": "需要重启服务器才能生效"
+}
+```
+
+**注意事项**:
+- `.env` 配置的修改需要重启服务器才能生效
+- `config.json` 配置可以实时生效（如果应用支持动态加载）
+- 重置 `env` 配置会从 `.env.example` 复制默认配置
+- 重置 `json` 配置会清空所有 JSON 配置项
+
+---
+
+## 评分管理 API
+
+### 1. 获取漫画的评分信息
+**GET** `/api/ratings/manga/:mangaId`
+
+**响应示例**:
+```json
+{
+  "manga_id": 1,
+  "average_rating": 8.5,
+  "rating_count": 10,
+  "ratings": [
+    {
+      "id": 1,
+      "rating": 9.0,
+      "comment": "非常精彩的作品！",
+      "created_at": "2026-01-14 10:00:00",
+      "updated_at": "2026-01-14 10:00:00"
+    }
+  ]
+}
+```
+
+### 2. 添加评分
+**POST** `/api/ratings/manga/:mangaId`
+
+**请求体**:
+```json
+{
+  "rating": 9.0,
+  "comment": "非常精彩的作品！"
+}
+```
+
+**响应示例**:
+```json
+{
+  "success": true,
+  "message": "评分已添加",
+  "rating": {
+    "id": 1,
+    "manga_id": 1,
+    "rating": 9.0,
+    "comment": "非常精彩的作品！"
+  },
+  "manga_stats": {
+    "average_rating": 8.5,
+    "rating_count": 10
+  }
+}
+```
+
+**参数说明**:
+- `rating` (必填): 评分值，范围 0-10
+- `comment` (可选): 评分评论
+
+### 3. 更新评分
+**PUT** `/api/ratings/:ratingId`
+
+**请求体**:
+```json
+{
+  "rating": 9.5,
+  "comment": "更新后的评论"
+}
+```
+
+**响应示例**:
+```json
+{
+  "success": true,
+  "message": "评分已更新",
+  "manga_stats": {
+    "average_rating": 8.7,
+    "rating_count": 10
+  }
+}
+```
+
+### 4. 删除评分
+**DELETE** `/api/ratings/:ratingId`
+
+**响应示例**:
+```json
+{
+  "success": true,
+  "message": "评分已删除",
+  "manga_stats": {
+    "average_rating": 8.4,
+    "rating_count": 9
+  }
+}
+```
+
+### 5. 获取评分统计
+**GET** `/api/ratings/stats`
+
+**响应示例**:
+```json
+{
+  "stats": {
+    "rated_manga_count": 50,
+    "total_ratings": 120,
+    "overall_average": 8.2,
+    "highest_rating": 10.0,
+    "lowest_rating": 5.0
+  },
+  "top_rated": [
+    {
+      "id": 1,
+      "title": "进击的巨人",
+      "cover_path": "/path/to/cover.jpg",
+      "rating": 9.5,
+      "rating_count": 20
+    }
+  ]
+}
+```
+
+**说明**:
+- 评分系统支持 0-10 分制
+- 每次添加、更新或删除评分后，会自动重新计算漫画的平均评分
+- 漫画表中的 `rating` 和 `rating_count` 字段会自动更新
+- 评分统计接口返回系统整体的评分数据和评分最高的漫画列表
 

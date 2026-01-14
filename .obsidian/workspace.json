@@ -1,0 +1,208 @@
+{
+  "main": {
+    "id": "f7d4e84bf5917f94",
+    "type": "split",
+    "children": [
+      {
+        "id": "d9eff47073c802b4",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "afa1c99f9bdc4859",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "docs/代码审查问题与改进建议.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "代码审查问题与改进建议"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "9b21ef75c403db4f",
+    "type": "split",
+    "children": [
+      {
+        "id": "3761fc45700df841",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "d12b56225e732062",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "文件列表"
+            }
+          },
+          {
+            "id": "15679b4391d542b2",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "搜索"
+            }
+          },
+          {
+            "id": "65f87822fab97084",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "书签"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "c850c0e2c0622dd3",
+    "type": "split",
+    "children": [
+      {
+        "id": "1740ec67f0758fe0",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "2c80bf055f4c7825",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "docs/代码审查问题与改进建议.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "代码审查问题与改进建议 的反向链接列表"
+            }
+          },
+          {
+            "id": "1a8349aa669eb038",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "docs/代码审查问题与改进建议.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "代码审查问题与改进建议 的出链列表"
+            }
+          },
+          {
+            "id": "6526f2c9424c2b21",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "标签"
+            }
+          },
+          {
+            "id": "561ca7f85420c0b4",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "添加笔记属性"
+            }
+          },
+          {
+            "id": "75230fdd1833845a",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "docs/代码审查问题与改进建议.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "代码审查问题与改进建议 的大纲"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:打开快速切换": false,
+      "graph:查看关系图谱": false,
+      "canvas:新建白板": false,
+      "daily-notes:打开/创建今天的日记": false,
+      "templates:插入模板": false,
+      "command-palette:打开命令面板": false,
+      "bases:新建数据库": false
+    }
+  },
+  "active": "afa1c99f9bdc4859",
+  "lastOpenFiles": [
+    "data/thumbnails/c61071d8cd223fda37ce13829130f190_large.webp",
+    "docs/待办事项.md",
+    "docs/代码审查问题与改进建议.md",
+    "docs/快速开始.md",
+    "data/config.json",
+    "dist/assets/Metadata-B-cRbCP5.js",
+    "dist/assets/Libraries-ZFxo1nee.js",
+    "dist/assets/Settings-C38ZBTUt.js",
+    "dist/assets/MangaDetails-BDmbb37R.js",
+    "dist/assets/Reader-BWGq5R2f.js",
+    "dist/assets/index-Z9lBPk8m.js",
+    "dist/assets/index-1G2p6DH6.css",
+    "docs/技术方案思路.md",
+    "dist/assets/Settings-C_GlTCCO.js",
+    "dist/assets/Metadata-BI6G5deT.js",
+    "data/thumbnails/be965fdf549aa73d51ae4861958dfc4d_large.webp",
+    "docs/测试指南.md",
+    "docs/项目全景导航图.canvas",
+    "docs/阶段性总结.md"
+  ]
+}

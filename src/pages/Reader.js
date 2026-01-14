@@ -61,8 +61,7 @@ export async function ReaderPage(params) {
         } else {
             // Render Images
             pagesData.pages.forEach(page => {
-                const imgPath = encodeURIComponent(page.path);
-                const imgUrl = `http://localhost:3000/api/image?path=${imgPath}`;
+                const imgUrl = api.image(page.path);
 
                 const imgWrapper = createElement('div', { className: 'w-full max-w-4xl flex justify-center' }, [
                     createElement('img', {

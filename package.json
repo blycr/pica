@@ -23,6 +23,7 @@
 		"vitest": "^4.0.17"
 	},
 	"dependencies": {
+		"bcryptjs": "^3.0.3",
 		"better-sqlite3": "^12.6.0",
 		"cors": "^2.8.5",
 		"dotenv": "^17.2.3",

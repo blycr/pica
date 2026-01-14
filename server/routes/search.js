@@ -18,7 +18,7 @@ const router = express.Router();
  */
 router.post('/advanced', (req, res) => {
     try {
-        const {
+        let {
             keyword = '',
             tags = [],
             favorite = null,
@@ -27,6 +27,9 @@ router.post('/advanced', (req, res) => {
             page = 1,
             limit = 20
         } = req.body;
+
+        // 对标签进行去重
+        tags = [...new Set(tags)];
 
         const offset = (page - 1) * limit;
         let query = 'SELECT DISTINCT m.* FROM manga m';

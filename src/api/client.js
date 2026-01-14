@@ -54,6 +54,7 @@ export const api = {
         autocomplete: (query) => fetchApi(`/search/autocomplete?q=${encodeURIComponent(query)}`),
         suggestions: () => fetchApi('/search/suggestions'),
     },
+    image: (path) => `${API_BASE_URL}/image?path=${encodeURIComponent(path)}`,
     thumbnails: {
         generate: (path, size = 'medium') => `${API_BASE_URL}/thumbnails/generate?path=${encodeURIComponent(path)}&size=${size}`,
         stats: () => fetchApi('/thumbnails/stats'),
@@ -91,5 +92,22 @@ export const api = {
             body: JSON.stringify({ mangaIds })
         }),
         delete: (mangaId) => fetchApi(`/metadata/${mangaId}`, { method: 'DELETE' }),
+    },
+    config: {
+        getAll: () => fetchApi('/config'),
+        get: (key) => fetchApi(`/config/${key}`),
+        updateEnv: (updates) => fetchApi('/config/env', {
+            method: 'PUT',
+            body: JSON.stringify(updates)
+        }),
+        updateJson: (updates) => fetchApi('/config/json', {
+            method: 'PUT',
+            body: JSON.stringify(updates)
+        }),
+        delete: (type, key) => fetchApi(`/config/${type}/${key}`, { method: 'DELETE' }),
+        reset: (type) => fetchApi('/config/reset', {
+            method: 'POST',
+            body: JSON.stringify({ type })
+        }),
     }
 };
